@@ -1,4 +1,4 @@
-import pool from '../db/conect.js';
+import pool from '../../db/conect.js';
 
 export const tarefa = {
     async getAll(){

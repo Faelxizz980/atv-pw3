@@ -5,7 +5,7 @@ const pool = await mysql.createPool({
   user: 'root',
   password: '',
   database: 'gerenciador_tarefas',
-  waitforConnections: true,
+  waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 10
 });
