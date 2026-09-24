@@ -1,43 +1,82 @@
 import pool from '../../db/conect.js';
+import { HttpError } from '../../utils/http-error.js';
 
-export const tarefa = {
-    async getAll(){
-        const [rows] = await pool.query('SELECT * FROM tarefas');
-        return rows;
-    },
+const COLUNAS = 'id, fk_usuario_id, titulo, descricao, status, created_at, updated_at';
 
-    async getById(id){
-        const [rows] = await pool.query(
-            'SELECT id, fk_usuario_id, titulo, descricao, status FROM tarefas WHERE id = ?',
-            [id]
-        );
-        return rows[0];
-    },
+// Todas as consultas são escopadas ao usuário dono das tarefas.
+export async function getAllByUser(usuarioId) {
+    const [rows] = await pool.query(
+        `SELECT ${COLUNAS} FROM tarefas WHERE fk_usuario_id = ? ORDER BY created_at DESC`,
+        [usuarioId]
+    );
+    return rows;
+}
 
-    async create(dados){
-        const [result] = await pool.execute(
-            'INSERT INTO tarefas (fk_usuario_id, titulo, descricao, status) VALUES (?, ?, ?, ?)',
-            [dados.fk_usuario_id, dados.titulo, dados.descricao, dados.status]
-        );
-        return result.insertId;
-    },
+export async function getById(id, usuarioId) {
+    const [rows] = await pool.execute(
+        `SELECT ${COLUNAS} FROM tarefas WHERE id = ? AND fk_usuario_id = ?`,
+        [id, usuarioId]
+    );
+    return rows[0];
+}
 
-    async update(id, dados){
-        const tarefaExistente = await this.getById(id);
-        if (!tarefaExistente) return false;
+export async function create(usuarioId, dados) {
+    const [resultado] = await pool.execute(
+        'INSERT INTO tarefas (fk_usuario_id, titulo, descricao, status) VALUES (?, ?, ?, ?)',
+        [usuarioId, dados.titulo, dados.descricao ?? null, dados.status ?? 'PENDENTE']
+    );
 
-        await pool.execute(
-            'UPDATE tarefas SET fk_usuario_id = ?, titulo = ?, descricao = ?, status = ? WHERE id = ?',
-            [dados.fk_usuario_id, dados.titulo, dados.descricao, dados.status, id]
-        );
-        return true;
-    },
+    return getById(resultado.insertId, usuarioId);
+}
 
-    async delete(id){
-        const tarefaExistente = await this.getById(id);
-        if (!tarefaExistente) return false;
+// Update parcial: apenas os campos enviados entram no SET; retorna a tarefa atualizada.
+export async function update(id, usuarioId, dados) {
+    const tarefaExistente = await getById(id, usuarioId);
 
-        await pool.execute('DELETE FROM tarefas WHERE id = ?', [id]);
-        return true;
+    if (!tarefaExistente) {
+        throw HttpError.notFound('Tarefa não encontrada');
     }
-};
+
+    const campos = [];
+    const valores = [];
+
+    if (dados.titulo !== undefined) {
+        campos.push('titulo = ?');
+        valores.push(dados.titulo);
+    }
+
+    if (dados.descricao !== undefined) {
+        campos.push('descricao = ?');
+        valores.push(dados.descricao);
+    }
+
+    if (dados.status !== undefined) {
+        campos.push('status = ?');
+        valores.push(dados.status);
+    }
+
+    if (campos.length === 0) {
+        throw HttpError.badRequest('Informe ao menos um campo para atualizar');
+    }
+
+    valores.push(id, usuarioId);
+    await pool.execute(
+        `UPDATE tarefas SET ${campos.join(', ')} WHERE id = ? AND fk_usuario_id = ?`,
+        valores
+    );
+
+    return getById(id, usuarioId);
+}
+
+export async function remove(id, usuarioId) {
+    const [resultado] = await pool.execute(
+        'DELETE FROM tarefas WHERE id = ? AND fk_usuario_id = ?',
+        [id, usuarioId]
+    );
+
+    if (resultado.affectedRows === 0) {
+        throw HttpError.notFound('Tarefa não encontrada');
+    }
+
+    return true;
+}

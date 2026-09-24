@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar · Gerenciador de Tarefas</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="pagina pagina--centralizada">
+    <main class="cartao">
+        <header class="cartao__cabecalho">
+            <span class="cartao__marca" aria-hidden="true">✔</span>
+            <h1 class="cartao__titulo">Entrar</h1>
+            <p class="cartao__subtitulo">Gerenciador de Tarefas</p>
+        </header>
+
+        <form id="form-login" class="formulario" novalidate>
+            <div class="campo">
+                <label for="email">E-mail</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    autocomplete="email"
+                    placeholder="voce@exemplo.com"
+                >
+            </div>
+
+            <div class="campo">
+                <label for="senha">Senha</label>
+                <input
+                    type="password"
+                    id="senha"
+                    name="senha"
+                    required
+                    autocomplete="current-password"
+                    placeholder="Sua senha"
+                >
+            </div>
+
+            <p id="mensagem-erro" class="mensagem mensagem--erro" role="alert" hidden></p>
+            <p id="mensagem-aviso" class="mensagem mensagem--ok" role="status" hidden></p>
+
+            <button type="submit" class="botao botao--primario" id="botao-entrar">
+                Entrar
+            </button>
+        </form>
+
+        <p class="cartao__rodape">
+            Não tem conta? <a href="/cadastro.html">Cadastre-se</a>
+        </p>
+    </main>
+
+    <script type="module" src="/js/login.js"></script>
+</body>
+</html>

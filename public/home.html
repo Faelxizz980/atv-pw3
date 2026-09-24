@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minhas Tarefas · Gerenciador de Tarefas</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="pagina">
+    <header class="cabecalho">
+        <div class="cabecalho__conteudo">
+            <span class="cabecalho__marca" aria-hidden="true">✔</span>
+            <h1 class="cabecalho__titulo">Minhas Tarefas</h1>
+        </div>
+        <div class="cabecalho__usuario">
+            <span id="usuario-nome" class="cabecalho__nome"></span>
+            <button type="button" id="botao-sair" class="botao botao--secundario">
+                Sair
+            </button>
+        </div>
+    </header>
+
+    <main class="principal">
+        <section class="painel" aria-labelledby="titulo-formulario">
+            <h2 id="titulo-formulario" class="painel__titulo">Nova tarefa</h2>
+
+            <form id="form-tarefa" class="formulario" novalidate>
+                <div class="campo">
+                    <label for="titulo">Título</label>
+                    <input
+                        type="text"
+                        id="titulo"
+                        name="titulo"
+                        required
+                        maxlength="100"
+                        placeholder="O que precisa ser feito?"
+                    >
+                </div>
+
+                <div class="campo">
+                    <label for="descricao">Descrição <span class="campo__opcional">(opcional)</span></label>
+                    <textarea
+                        id="descricao"
+                        name="descricao"
+                        rows="3"
+                        maxlength="2000"
+                        placeholder="Detalhes da tarefa"
+                    ></textarea>
+                </div>
+
+                <div class="campo">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="PENDENTE">Pendente</option>
+                        <option value="CONCLUIDA">Concluída</option>
+                    </select>
+                </div>
+
+                <p id="mensagem-erro" class="mensagem mensagem--erro" role="alert" hidden></p>
+
+                <div class="acoes">
+                    <button type="submit" class="botao botao--primario" id="botao-salvar">
+                        Criar tarefa
+                    </button>
+                    <button type="button" class="botao botao--secundario" id="botao-cancelar" hidden>
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="painel" aria-labelledby="titulo-lista">
+            <div class="painel__cabecalho">
+                <h2 id="titulo-lista" class="painel__titulo">Lista de tarefas</h2>
+                <span id="contador-tarefas" class="contador" aria-live="polite"></span>
+            </div>
+
+            <p id="mensagem-lista" class="mensagem mensagem--erro" role="alert" hidden></p>
+            <p id="lista-vazia" class="lista__vazia" hidden>
+                Nenhuma tarefa ainda. Crie a sua primeira acima!
+            </p>
+
+            <ul id="lista-tarefas" class="lista"></ul>
+        </section>
+    </main>
+
+    <template id="template-tarefa">
+        <li class="tarefa">
+            <div class="tarefa__principal">
+                <input type="checkbox" class="tarefa__checkbox" id="">
+                <div class="tarefa__conteudo">
+                    <label class="tarefa__titulo"></label>
+                    <p class="tarefa__descricao"></p>
+                    <span class="tarefa__status"></span>
+                </div>
+            </div>
+            <div class="tarefa__acoes">
+                <button type="button" class="botao botao--icone botao--editar" aria-label="Editar tarefa">
+                    Editar
+                </button>
+                <button type="button" class="botao botao--icone botao--excluir" aria-label="Excluir tarefa">
+                    Excluir
+                </button>
+            </div>
+        </li>
+    </template>
+
+    <script type="module" src="/js/home.js"></script>
+</body>
+</html>
