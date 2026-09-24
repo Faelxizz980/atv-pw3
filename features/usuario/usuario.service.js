@@ -28,7 +28,7 @@ export async function getByEmail(email) {
 }
 
 export async function create(dados) {
-    const usuarioExistente = await getById(dados.id);
+    const usuarioExistente = await getByEmail(dados.email);
 
     if (usuarioExistente) {
         return false;
@@ -43,23 +43,49 @@ export async function create(dados) {
 
     return resultado.insertId;
 }
-
-export async function update(valor) {
-
-    const usuarioExistente = await getById(valor.id);
+export async function update(dados) {
+    const usuarioExistente = await getById(dados.id);
 
     if (!usuarioExistente) {
         return false;
     }
 
-    const senhaHash = await bcrypt.hash(valor.senha, 10);
+    let query;
+    let valores;
 
-    const [resultado] = await pool.execute(
-        'UPDATE usuarios SET email = ?, nome = ?, senha = ? WHERE id = ?',
-        [valor.email, valor.nome, senhaHash, valor.id]
-    );
+    if (dados.senha) {
+        const senhaHash = await bcrypt.hash(dados.senha, 10);
+
+        query = `
+            UPDATE usuarios
+            SET email = ?, nome = ?, senha = ?
+            WHERE id = ?
+        `;
+
+        valores = [
+            dados.email,
+            dados.nome,
+            senhaHash,
+            dados.id
+        ];
+    } else {
+        query = `
+            UPDATE usuarios
+            SET email = ?, nome = ?
+            WHERE id = ?
+        `;
+
+        valores = [
+            dados.email,
+            dados.nome,
+            dados.id
+        ];
+    }
+
+    const [resultado] = await pool.execute(query, valores);
 
     return resultado.affectedRows > 0;
+    
 }
 
 
