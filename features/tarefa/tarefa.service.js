@@ -1,82 +1,59 @@
-import pool from '../../db/conect.js';
 import { HttpError } from '../../utils/http-error.js';
+import * as usuarioService from '../usuario/usuario.service.js';
 
-const COLUNAS = 'id, fk_usuario_id, titulo, descricao, status, created_at, updated_at';
+let tarefas = [];
+let nextId = 1;
 
-// Todas as consultas são escopadas ao usuário dono das tarefas.
-export async function getAllByUser(usuarioId) {
-    const [rows] = await pool.query(
-        `SELECT ${COLUNAS} FROM tarefas WHERE fk_usuario_id = ? ORDER BY created_at DESC`,
-        [usuarioId]
-    );
-    return rows;
+export function getAll(filtro = {}) {
+  if (filtro.usuarioId) return tarefas.filter((t) => t.usuarioId === filtro.usuarioId);
+  return tarefas;
 }
 
-export async function getById(id, usuarioId) {
-    const [rows] = await pool.execute(
-        `SELECT ${COLUNAS} FROM tarefas WHERE id = ? AND fk_usuario_id = ?`,
-        [id, usuarioId]
-    );
-    return rows[0];
+export function getById(id) {
+  return tarefas.find((t) => t.id === id) ?? null;
 }
 
-export async function create(usuarioId, dados) {
-    const [resultado] = await pool.execute(
-        'INSERT INTO tarefas (fk_usuario_id, titulo, descricao, status) VALUES (?, ?, ?, ?)',
-        [usuarioId, dados.titulo, dados.descricao ?? null, dados.status ?? 'PENDENTE']
-    );
+export function create(dados) {
+  const usuario = usuarioService.getById(dados.usuarioId);
+  if (!usuario) throw HttpError.notFound('Usuário não encontrado');
 
-    return getById(resultado.insertId, usuarioId);
+  const tarefa = {
+    id: nextId++,
+    usuarioId: dados.usuarioId,
+    titulo: dados.titulo,
+    descricao: dados.descricao ?? null,
+    status: dados.status ?? 'PENDENTE',
+  };
+  tarefas.push(tarefa);
+  return tarefa;
 }
 
-// Update parcial: apenas os campos enviados entram no SET; retorna a tarefa atualizada.
-export async function update(id, usuarioId, dados) {
-    const tarefaExistente = await getById(id, usuarioId);
+export function update(id, dados) {
+  const tarefa = getById(id);
+  if (!tarefa) throw HttpError.notFound('Tarefa não encontrada');
 
-    if (!tarefaExistente) {
-        throw HttpError.notFound('Tarefa não encontrada');
-    }
+  if (tarefa.status === 'CONCLUIDA') {
+    throw HttpError.badRequest('Tarefa já concluída e não pode ser editada');
+  }
 
-    const campos = [];
-    const valores = [];
-
-    if (dados.titulo !== undefined) {
-        campos.push('titulo = ?');
-        valores.push(dados.titulo);
-    }
-
-    if (dados.descricao !== undefined) {
-        campos.push('descricao = ?');
-        valores.push(dados.descricao);
-    }
-
-    if (dados.status !== undefined) {
-        campos.push('status = ?');
-        valores.push(dados.status);
-    }
-
-    if (campos.length === 0) {
-        throw HttpError.badRequest('Informe ao menos um campo para atualizar');
-    }
-
-    valores.push(id, usuarioId);
-    await pool.execute(
-        `UPDATE tarefas SET ${campos.join(', ')} WHERE id = ? AND fk_usuario_id = ?`,
-        valores
-    );
-
-    return getById(id, usuarioId);
+  if (dados.titulo !== undefined) tarefa.titulo = dados.titulo;
+  if (dados.descricao !== undefined) tarefa.descricao = dados.descricao;
+  if (dados.status !== undefined) tarefa.status = dados.status;
+  return tarefa;
 }
 
-export async function remove(id, usuarioId) {
-    const [resultado] = await pool.execute(
-        'DELETE FROM tarefas WHERE id = ? AND fk_usuario_id = ?',
-        [id, usuarioId]
-    );
+export function remove(id) {
+  const idx = tarefas.findIndex((t) => t.id === id);
+  if (idx === -1) throw HttpError.notFound('Tarefa não encontrada');
+  tarefas.splice(idx, 1);
+  return true;
+}
 
-    if (resultado.affectedRows === 0) {
-        throw HttpError.notFound('Tarefa não encontrada');
-    }
+export function removeByUsuarioId(usuarioId) {
+  tarefas = tarefas.filter((t) => t.usuarioId !== usuarioId);
+}
 
-    return true;
+export function _reset() {
+  tarefas = [];
+  nextId = 1;
 }

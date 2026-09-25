@@ -1,21 +1,22 @@
-/* Base */
+/* Base - Tema Roxo com detalhes Brancos */
 :root {
-    --cor-fundo: #f4f6fb;
+    --cor-fundo: #ede9fe;
+    --cor-fundo-degrade: linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
     --cor-superficie: #ffffff;
-    --cor-borda: #dde2ec;
-    --cor-texto: #1d2433;
-    --cor-texto-suave: #5b6478;
-    --cor-primaria: #2f5bea;
-    --cor-primaria-escura: #2448bd;
-    --cor-primaria-clara: #e8eeff;
-    --cor-sucesso: #197a45;
-    --cor-sucesso-clara: #e4f6ec;
-    --cor-perigo: #cf3030;
-    --cor-perigo-escura: #a92424;
-    --cor-perigo-clara: #fdecec;
-    --raio: 10px;
+    --cor-borda: #ddd6fe;
+    --cor-texto: #3c196e;
+    --cor-texto-suave: #8b7ab8;
+    --cor-primaria: #7c3aed;
+    --cor-primaria-escura: #5b21b6;
+    --cor-primaria-clara: #f5f3ff;
+    --cor-sucesso: #7c3aed;
+    --cor-sucesso-clara: #f5f3ff;
+    --cor-perigo: #9f4dd1;
+    --cor-perigo-escura: #6d28a8;
+    --cor-perigo-clara: #f5f0ff;
+    --raio: 12px;
     --espaco: 1rem;
-    --sombra: 0 8px 24px rgba(29, 36, 51, 0.08);
+    --sombra: 0 8px 24px rgba(92, 33, 182, 0.15);
     --fonte: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -29,6 +30,14 @@ body {
     background: var(--cor-fundo);
     color: var(--cor-texto);
     line-height: 1.5;
+}
+
+body.pagina {
+    background: var(--cor-fundo);
+}
+
+body.pagina--centralizada {
+    background: var(--cor-fundo-degrade);
 }
 
 h1,
@@ -90,6 +99,8 @@ a:hover {
     color: #fff;
     font-size: 1.25rem;
     margin-bottom: 0.5rem;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
 }
 
 .cartao__titulo {
@@ -109,7 +120,7 @@ a:hover {
     color: var(--cor-texto-suave);
 }
 
-/* Cabeçalho da home */
+/* Cabeçalho da home - roxo */
 .cabecalho {
     display: flex;
     flex-wrap: wrap;
@@ -117,8 +128,10 @@ a:hover {
     align-items: center;
     justify-content: space-between;
     padding: 0.9rem 1.25rem;
-    background: var(--cor-superficie);
-    border-bottom: 1px solid var(--cor-borda);
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    border-bottom: 3px solid #fff;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(92, 33, 182, 0.25);
 }
 
 .cabecalho__conteudo,
@@ -140,8 +153,13 @@ a:hover {
 }
 
 .cabecalho__nome {
-    color: var(--cor-texto-suave);
+    color: #fff;
     font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.cabecalho__titulo {
+    color: #fff;
 }
 
 /* Layout principal */
@@ -269,9 +287,9 @@ a:hover {
 }
 
 .botao--secundario {
-    background: var(--cor-superficie);
-    color: var(--cor-texto);
-    border-color: var(--cor-borda);
+    background: #fff;
+    color: var(--cor-primaria);
+    border-color: #fff;
 }
 
 .botao--secundario:hover:not(:disabled) {
@@ -353,8 +371,9 @@ a:hover {
 }
 
 .tarefa--concluida {
-    border-left-color: var(--cor-sucesso);
-    background: var(--cor-sucesso-clara);
+    border-left-color: var(--cor-primaria);
+    background: #f5f3ff;
+    opacity: 0.85;
 }
 
 .tarefa__principal {
@@ -369,7 +388,7 @@ a:hover {
     width: 1.15rem;
     height: 1.15rem;
     margin-top: 0.2rem;
-    accent-color: var(--cor-sucesso);
+    accent-color: var(--cor-primaria);
     cursor: pointer;
     flex-shrink: 0;
 }

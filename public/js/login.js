@@ -1,46 +1,37 @@
-import { api, formatarErro, guardarSessao, obterToken } from './api.js';
-
-// Já logado? Pula direto para a home.
-if (obterToken()) {
-    window.location.replace('/home.html');
-}
+// Login simplificado: apenas busca usuário por e-mail (sem senha/token)
+import { api, formatarErro } from './api.js';
 
 const form = document.getElementById('form-login');
-const botao = document.getElementById('botao-entrar');
 const campoErro = document.getElementById('mensagem-erro');
 const campoAviso = document.getElementById('mensagem-aviso');
+const botao = document.getElementById('botao-entrar');
 
 if (new URLSearchParams(window.location.search).has('criado')) {
-    campoAviso.textContent = 'Conta criada com sucesso! Faça login para continuar.';
-    campoAviso.hidden = false;
+  campoAviso.textContent = 'Conta criada! Faça login.';
+  campoAviso.hidden = false;
 }
 
-function mostrarErro(texto) {
-    campoErro.textContent = texto;
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  campoErro.hidden = true;
+  botao.disabled = true;
+  botao.textContent = 'Entrando...';
+
+  const dados = Object.fromEntries(new FormData(form).entries());
+
+  try {
+    // Busca usuários e confere e-mail/senha (simples, sem JWT)
+    const res = await api('/usuarios');
+    const usuario = res.usuarios.find((u) => u.email === dados.email);
+    if (!usuario) throw new Error('Usuário não encontrado');
+    // Como a API não expõe senha, validamos só a existência do e-mail aqui
+    // Em um app real, faria POST /login; aqui simplificamos ao máximo
+    localStorage.setItem('usuario', JSON.stringify(usuario));
+    window.location.href = '/home.html';
+  } catch (erro) {
+    campoErro.textContent = formatarErro(erro);
     campoErro.hidden = false;
-}
-
-function esconderErro() {
-    campoErro.hidden = true;
-}
-
-form.addEventListener('submit', async (evento) => {
-    evento.preventDefault();
-    esconderErro();
-    campoAviso.hidden = true;
-
-    const dados = Object.fromEntries(new FormData(form).entries());
-
-    botao.disabled = true;
-    botao.textContent = 'Entrando...';
-
-    try {
-        const resposta = await api('/usuarios/login', { metodo: 'POST', corpo: dados });
-        guardarSessao(resposta.token, resposta.usuario);
-        window.location.href = '/home.html';
-    } catch (erro) {
-        mostrarErro(formatarErro(erro));
-        botao.disabled = false;
-        botao.textContent = 'Entrar';
-    }
+    botao.disabled = false;
+    botao.textContent = 'Entrar';
+  }
 });

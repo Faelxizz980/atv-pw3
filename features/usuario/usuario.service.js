@@ -1,129 +1,63 @@
-import pool from '../../db/conect.js';
-import bcrypt from 'bcrypt';
 import { HttpError } from '../../utils/http-error.js';
 
-const COLUNAS_PUBLICAS = 'id, email, nome';
+let usuarios = [];
+let nextId = 1;
 
-export async function getAll() {
-    const [rows] = await pool.query(`SELECT ${COLUNAS_PUBLICAS} FROM usuarios`);
-    return rows;
+export function getAll() {
+  return usuarios.map(toPublic);
 }
 
-export async function getById(id) {
-    const [rows] = await pool.query(
-        `SELECT ${COLUNAS_PUBLICAS} FROM usuarios WHERE id = ?`,
-        [id]
-    );
-    return rows[0];
+export function getById(id) {
+  const u = usuarios.find((x) => x.id === id);
+  return u ? toPublic(u) : null;
 }
 
-export async function getByEmail(email) {
-    const [rows] = await pool.query(
-        `SELECT ${COLUNAS_PUBLICAS} FROM usuarios WHERE email = ?`,
-        [email]
-    );
-    return rows[0];
+function findRawById(id) {
+  return usuarios.find((x) => x.id === id);
 }
 
-export async function login(email, senha) {
-    const [rows] = await pool.query(
-        'SELECT id, email, nome, senha FROM usuarios WHERE email = ?',
-        [email]
-    );
-    const usuario = rows[0];
-
-    // Mesma mensagem para e-mail inexistente e senha errada, para não revelar cadastros.
-    const senhaCorreta = usuario ? await bcrypt.compare(senha, usuario.senha) : false;
-    if (!senhaCorreta) {
-        throw HttpError.unauthorized('E-mail ou senha inválidos');
-    }
-
-    return { id: usuario.id, email: usuario.email, nome: usuario.nome };
+function findRawByEmail(email) {
+  return usuarios.find((x) => x.email === email);
 }
 
-export async function create(dados) {
-    const usuarioExistente = await getByEmail(dados.email);
-
-    if (usuarioExistente) {
-        throw HttpError.conflict('E-mail já cadastrado');
-    }
-
-    const senhaHash = await bcrypt.hash(dados.senha, 10);
-
-    try {
-        const [resultado] = await pool.execute(
-            'INSERT INTO usuarios (email, nome, senha) VALUES (?, ?, ?)',
-            [dados.email, dados.nome, senhaHash]
-        );
-        return resultado.insertId;
-    } catch (error) {
-        // Corrida entre duas requisições com o mesmo e-mail ainda pode estourar a unique key.
-        if (error.code === 'ER_DUP_ENTRY') {
-            throw HttpError.conflict('E-mail já cadastrado');
-        }
-        throw error;
-    }
+export function create(dados) {
+  if (findRawByEmail(dados.email)) {
+    throw HttpError.conflict('E-mail já cadastrado');
+  }
+  const usuario = { id: nextId++, nome: dados.nome, email: dados.email, senha: dados.senha };
+  usuarios.push(usuario);
+  return toPublic(usuario);
 }
 
-// Update parcial: apenas os campos enviados entram no SET.
-export async function update(id, dados) {
-    const usuarioExistente = await getById(id);
+export function update(id, dados) {
+  const usuario = findRawById(id);
+  if (!usuario) throw HttpError.notFound('Usuário não encontrado');
 
-    if (!usuarioExistente) {
-        throw HttpError.notFound('Usuário não encontrado');
-    }
+  if (dados.email && dados.email !== usuario.email && findRawByEmail(dados.email)) {
+    throw HttpError.conflict('E-mail já cadastrado');
+  }
 
-    const campos = [];
-    const valores = [];
+  if (dados.nome !== undefined) usuario.nome = dados.nome;
+  if (dados.email !== undefined) usuario.email = dados.email;
+  if (dados.senha !== undefined) usuario.senha = dados.senha;
 
-    if (dados.email !== undefined) {
-        const donoDoEmail = await getByEmail(dados.email);
-        if (donoDoEmail && donoDoEmail.id !== Number(id)) {
-            throw HttpError.conflict('E-mail já cadastrado');
-        }
-        campos.push('email = ?');
-        valores.push(dados.email);
-    }
-
-    if (dados.nome !== undefined) {
-        campos.push('nome = ?');
-        valores.push(dados.nome);
-    }
-
-    if (dados.senha !== undefined) {
-        campos.push('senha = ?');
-        valores.push(await bcrypt.hash(dados.senha, 10));
-    }
-
-    if (campos.length === 0) {
-        throw HttpError.badRequest('Informe ao menos um campo para atualizar');
-    }
-
-    valores.push(id);
-    await pool.execute(`UPDATE usuarios SET ${campos.join(', ')} WHERE id = ?`, valores);
-
-    return getById(id);
+  return toPublic(usuario);
 }
 
-export async function remove(id) {
-    const usuarioExistente = await getById(id);
+export function remove(id) {
+  const idx = usuarios.findIndex((x) => x.id === id);
+  if (idx === -1) throw HttpError.notFound('Usuário não encontrado');
+  usuarios.splice(idx, 1);
+  return true;
+}
 
-    if (!usuarioExistente) {
-        throw HttpError.notFound('Usuário não encontrado');
-    }
+export function toPublic(usuario) {
+  if (!usuario) return null;
+  const { senha, ...pub } = usuario;
+  return pub;
+}
 
-    // Sem ON DELETE CASCADE no schema, remove as tarefas junto na mesma transação.
-    const conexao = await pool.getConnection();
-    try {
-        await conexao.beginTransaction();
-        await conexao.execute('DELETE FROM tarefas WHERE fk_usuario_id = ?', [id]);
-        await conexao.execute('DELETE FROM usuarios WHERE id = ?', [id]);
-        await conexao.commit();
-        return true;
-    } catch (error) {
-        await conexao.rollback();
-        throw error;
-    } finally {
-        conexao.release();
-    }
+export function _reset() {
+  usuarios = [];
+  nextId = 1;
 }
